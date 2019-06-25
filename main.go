@@ -11,15 +11,24 @@ import (
 	"github.com/gorilla/mux"
 )
 
+/*
+Data struct for the final json response send to user
+*/
 type Data struct {
 	Response []Response `json:"data"`
 }
 
+/*
+Response struct for the data of one city on 12 months
+*/
 type Response struct {
 	City               string              `json:"city"`
 	IradianceResponses []IradianceResponse `json:"iradianceResponses"`
 }
 
+/*
+IradianceResponse struct for one month data
+*/
 type IradianceResponse struct {
 	Month string  `json:"month"`
 	Ed    float64 `json:"ed"`
@@ -29,6 +38,9 @@ type IradianceResponse struct {
 	Sdm   float64 `json:"sdm"`
 }
 
+/*
+City Struct of un city for the pvgis call
+*/
 type City struct {
 	name      string
 	latitude  float64
@@ -37,6 +49,9 @@ type City struct {
 
 var cities []City
 
+/*
+Initialize list of city for api calling
+*/
 func initCities() {
 	cities = []City{
 		City{
@@ -67,6 +82,11 @@ func initCities() {
 	}
 }
 
+/*
+getCall function
+	-Make request for all cities with goroutines
+	-receive response and create json response
+*/
 func getCall(w http.ResponseWriter, r *http.Request) {
 	var responses []Response
 	ch := make(chan Response)
@@ -90,6 +110,9 @@ func getCall(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseFinal)
 }
 
+/*
+Parse response from pvgis api and crete structure json response
+*/
 func parseBody(body string, cityName string) Response {
 	temp := strings.Split(body, "\n")
 	i := 10
@@ -123,6 +146,9 @@ func parseBody(body string, cityName string) Response {
 
 }
 
+/*
+MakeRequest function call pvgis API and return the body of the response
+*/
 func MakeRequest(city City, ch chan<- Response) {
 	resp, _ := http.Get(fmt.Sprintf("http://re.jrc.ec.europa.eu/pvgis5/PVcalc.php?lat=%g&lon=%g&peakpower=3&loss=22&outputformat=csv", city.latitude, city.longitude))
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -130,6 +156,9 @@ func MakeRequest(city City, ch chan<- Response) {
 	ch <- response
 }
 
+/*
+Main function, router initialization and call route creation on port 8000
+*/
 func main() {
 	initCities()
 	router := mux.NewRouter()
